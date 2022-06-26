@@ -40,7 +40,7 @@ namespace HorizonEngine
 
 
 		// GLSL Uniforms
-		public static int OrthographicProjectionUniform;
+		public static int ProjectionUniform;
 		public static int SaturationUniform;
 
 
@@ -79,16 +79,16 @@ namespace HorizonEngine
 
 		private static void OnWindowLoad()
 		{
+			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "\n" + "Renderer: " + GL.GetString(StringName.Renderer) + "\n" + "Vendor:   " + GL.GetString(StringName.Vendor));
+
 			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "Window Loaded");
 
+			// Load base shaders
 			Program = LoadShaderProgram("../../../../Shaders/Base_Vertex.glsl", "../../../../Shaders/Base_Fragment.glsl");
 
 			// Set uniform locations
-			OrthographicProjectionUniform = GL.GetUniformLocation(Program.ID, "OrthographicProjection");
+			ProjectionUniform = GL.GetUniformLocation(Program.ID, "ProjectionMatrix");
 			SaturationUniform = GL.GetUniformLocation(Program.ID, "Saturation");
-
-			// GL.GetString for renderer and vendor info 
-			// https://stackoverflow.com/questions/42245870/how-to-get-the-graphics-card-model-name-in-opengl-or-win32
 		}
 
 		private static void OnUpdateFrame(FrameEventArgs Args)
@@ -106,8 +106,8 @@ namespace HorizonEngine
 			// Set uniforms
 			GL.Uniform1(SaturationUniform, 1.0f);
 
-			Matrix4 OrthographicProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
-			GL.UniformMatrix4(OrthographicProjectionUniform, false, ref OrthographicProjectionMatrix);
+			Matrix4 ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
+			GL.UniformMatrix4(ProjectionUniform, false, ref ProjectionMatrix);
 
 
 			// Creating and deleting VAOs and stuff every frame is inefficient, take action immediately
@@ -128,8 +128,6 @@ namespace HorizonEngine
 			GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 0, 0);
 
 			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
-
-			Editor.DrawUI();
 
 			// Unbindings
 			GL.BindVertexArray(0);
