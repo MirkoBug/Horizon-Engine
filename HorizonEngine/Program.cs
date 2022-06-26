@@ -18,6 +18,7 @@ namespace HorizonEngine
 
 		// Render settings
 		public static bool UsePerspective = false;
+		public static float FOV = 70f;
 		public static float FarClipPlaneDistance = 10000f;
 		public static float OrthographicScale = 5f;
 
@@ -76,14 +77,20 @@ namespace HorizonEngine
 			// Run the window
 			Window.Run();
 		}
-
+		
 		private static void OnWindowLoad()
 		{
+			// Print debug info
 			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "\n" + "Renderer: " + GL.GetString(StringName.Renderer) + "\n" + "Vendor:   " + GL.GetString(StringName.Vendor));
 
 			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "Window Loaded");
 
-			// Load base shaders
+			if(UsePerspective)
+				ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "Using Perspective Projection With " + FOV + " FOV");
+			else
+				ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "Using Orthographic Projection With Scale Of " + OrthographicScale);
+
+			// Load base shader program
 			Program = LoadShaderProgram("../../../../Shaders/Base_Vertex.glsl", "../../../../Shaders/Base_Fragment.glsl");
 
 			// Set uniform locations
@@ -106,11 +113,21 @@ namespace HorizonEngine
 			// Set uniforms
 			GL.Uniform1(SaturationUniform, 1.0f);
 
-			Matrix4 ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
+
+
+			// Generate Projection Matrix
+			Matrix4 ProjectionMatrix;
+			if (UsePerspective)
+				ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(FOV * ((float)Math.PI / 180f), 1.77777f, 0.000001f, FarClipPlaneDistance);
+			else
+				ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
+
+			// Pass the projection matrix to shaders
 			GL.UniformMatrix4(ProjectionUniform, false, ref ProjectionMatrix);
 
 
-			// Creating and deleting VAOs and stuff every frame is inefficient, take action immediately
+
+			// Creating and deleting VAOs and stuff every frame is inefficient, needs refactor
 			int VAO = GL.GenVertexArray();
 			int Vertices = GL.GenBuffer();
 			int VertexColors = GL.GenBuffer();
