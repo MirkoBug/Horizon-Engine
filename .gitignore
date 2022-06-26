@@ -3,5 +3,5 @@
 .vs/HorizonEngine/bin/
 .vs/HorizonEngine/obj/
 .vs/HorizonEngine/v16/
-/HorizonEngine/bin/
-/HorizonEngine/obj/
+HorizonEngine/bin/
+HorizonEngine/obj/
