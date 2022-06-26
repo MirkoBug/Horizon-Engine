@@ -2,4 +2,7 @@
 .vs/HorizonEngine/DesignTimeBuild/
 .vs/HorizonEngine/v16/
 HorizonEngine/bin/
+HorizonEngine/bin/x64/
+HorizonEngine/bin/x64/Debug/
+HorizonEngine/bin/x64/Debug/netcoreapp3.1/
 HorizonEngine/obj/
