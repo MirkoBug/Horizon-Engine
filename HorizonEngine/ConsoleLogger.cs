@@ -22,12 +22,12 @@ namespace HorizonEngine
 				case MessageType.Info:
 					Console.ForegroundColor = ConsoleColor.Gray;
 					Console.WriteLine("[" + DateTime.Now.ToString() + "]" + "[INFO]  " + _Message);
-					break;
+				break;
 
 				case MessageType.Alert:
 					Console.ForegroundColor = ConsoleColor.Yellow;
 					Console.WriteLine("[" + DateTime.Now.ToString() + "]" + "[ALERT] " + _Message);
-					break;
+				break;
 
 				case MessageType.Error:
 					Console.ForegroundColor = ConsoleColor.Red;
@@ -47,7 +47,7 @@ namespace HorizonEngine
 				default:
 					Console.ForegroundColor = ConsoleColor.Magenta;
 					Console.WriteLine("Program tried to send an unknown message type!\nMessage: " + _Message);
-					break;
+				break;
 			}
 
 			Console.ForegroundColor = ConsoleColor.Gray;
