@@ -1,7 +1,5 @@
 
-.vs/HorizonEngine/DesignTimeBuild/.dtbcache.v2
-.vs/HorizonEngine/v16/.suo
-.vs/HorizonEngine/v16/Browse.VC.db
+.vs/HorizonEngine/DesignTimeBuild/
 .vs/HorizonEngine/bin/
 .vs/HorizonEngine/obj/
 .vs/HorizonEngine/v16/
