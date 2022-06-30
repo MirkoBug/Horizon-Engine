@@ -42,9 +42,7 @@ namespace HorizonEngine
 
 
 		// GLSL Uniforms
-		public static int ModelUniform;
 		public static int ProjectionUniform;
-		public static int ViewUniform;
 		public static int SaturationUniform;
 
 
@@ -97,9 +95,7 @@ namespace HorizonEngine
 			Program = LoadShaderProgram("../../../../Shaders/Base_Vertex.glsl", "../../../../Shaders/Base_Fragment.glsl");
 
 			// Set uniform locations
-			ModelUniform = GL.GetUniformLocation(Program.ID, "ModelMatrix");
 			ProjectionUniform = GL.GetUniformLocation(Program.ID, "ProjectionMatrix");
-			ViewUniform = GL.GetUniformLocation(Program.ID, "ViewMatrix");
 			SaturationUniform = GL.GetUniformLocation(Program.ID, "Saturation");
 		}
 
@@ -123,26 +119,12 @@ namespace HorizonEngine
 			// Generate Projection Matrix
 			Matrix4 ProjectionMatrix;
 			if (UsePerspective)
-				ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(FOV * ((float)Math.PI / 180f), 1.77777f, 0.000001f, FarClipPlaneDistance);
+				ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(FOV * ((float)Math.PI / 180f), (float)Window.Size.X / (float)Window.Size.Y, 0.000001f, FarClipPlaneDistance);
 			else
 				ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
 
-			// For testing, move the camera vertically a bit
-			CameraPosition += new Vector3(0, 0.01f, 0);
-
-			// WIP: Generate View Matrix	|	Matrix4.LookAt(Vector3 Eye, Vector3 Target, Vector3 Up);
-			Matrix4 CameraTransform = Utility.CreateTransform(CameraPosition, new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-			Matrix4 ViewMatrix = CameraTransform;
-
-			Matrix4 ModelMatrix = Utility.CreateTransform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1));
-
-
-
-
 			// Pass the projection matrix to shaders
-			GL.UniformMatrix4(ModelUniform, false, ref ModelMatrix);
 			GL.UniformMatrix4(ProjectionUniform, false, ref ProjectionMatrix);
-			GL.UniformMatrix4(ViewUniform, false, ref ViewMatrix);
 
 
 
