@@ -17,7 +17,7 @@ namespace HorizonEngine
 
 
 		// Render settings
-		public static bool UsePerspective = false;
+		public static bool UsePerspective = true;
 		public static float FOV = 70f;
 		public static float FarClipPlaneDistance = 10000f;
 		public static float OrthographicScale = 5f;
@@ -25,26 +25,23 @@ namespace HorizonEngine
 
 
 
-		// Vertex data
+		// Vertex data (Temporary, for testing)
 		public static float[] Verts =
 		{
 				-0.5f, -0.5f, 0.0f,
-				 0.5f, -0.5f, 0.0f,
-				 0.0f,  0.5f, 0.0f
-		};
-		public static float[] VertColors =
-		{
-				 1.0f,  0.0f, 0.0f,
-				 0.0f,  1.0f, 0.0f,
-				 0.0f,  0.0f, 1.0f
+				-0.5f,  0.5f, 0.0f,
+				 0.5f,  0.5f, 0.0f,
+				-0.5f, -0.5f, 0.0f,
+				 0.5f,  0.5f, 0.0f,
+				 0.5f, -0.5f, 0.0f
 		};
 
 
 
 		// GLSL Uniforms
+		public static int ModelUniform;
 		public static int ProjectionUniform;
-		public static int SaturationUniform;
-
+		public static int ViewUniform;
 
 
 		public static void Main(string[] args)
@@ -69,7 +66,7 @@ namespace HorizonEngine
 
 
 			// Bind functions to window events
-			Window.Load += OnWindowLoad;
+			Window.Load	       += OnWindowLoad;
 			Window.UpdateFrame += OnUpdateFrame;
 			Window.RenderFrame += OnRenderFrame;
 
@@ -94,9 +91,12 @@ namespace HorizonEngine
 			// Load base shader program
 			Program = LoadShaderProgram("../../../../Shaders/Base_Vertex.glsl", "../../../../Shaders/Base_Fragment.glsl");
 
+			GL.Viewport(0, 0, Window.Size.X, Window.Size.Y);
+
 			// Set uniform locations
+			ModelUniform = GL.GetUniformLocation(Program.ID, "ModelMatrix");
 			ProjectionUniform = GL.GetUniformLocation(Program.ID, "ProjectionMatrix");
-			SaturationUniform = GL.GetUniformLocation(Program.ID, "Saturation");
+			ViewUniform = GL.GetUniformLocation(Program.ID, "ViewMatrix");
 		}
 
 		private static void OnUpdateFrame(FrameEventArgs Args)
@@ -111,10 +111,6 @@ namespace HorizonEngine
 			GL.UseProgram(Program.ID);
 
 
-			// Set uniforms
-			GL.Uniform1(SaturationUniform, 1.0f);
-
-
 
 			// Generate Projection Matrix
 			Matrix4 ProjectionMatrix;
@@ -123,15 +119,25 @@ namespace HorizonEngine
 			else
 				ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
 
+			
+
+			// View and Model matrix generation
+			Matrix4 ViewMatrix = Matrix4.LookAt(CameraPosition, CameraPosition - Vector3.UnitZ, Vector3.UnitY).Inverted();
+			Matrix4 ModelMatrix = Utility.CreateTransform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+
+			
+
 			// Pass the projection matrix to shaders
+			GL.UniformMatrix4(ModelUniform, false, ref ModelMatrix);
 			GL.UniformMatrix4(ProjectionUniform, false, ref ProjectionMatrix);
+			GL.UniformMatrix4(ViewUniform, false, ref ViewMatrix);
+
 
 
 
 			// Creating and deleting VAOs and stuff every frame is inefficient, needs refactor
 			int VAO = GL.GenVertexArray();
 			int Vertices = GL.GenBuffer();
-			int VertexColors = GL.GenBuffer();
 
 			GL.BindVertexArray(VAO);
 
@@ -140,21 +146,13 @@ namespace HorizonEngine
 			GL.EnableVertexAttribArray(0);																					// Let shaders access this vertex array at layout position 0
 			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, 0);                                       // Specify the number of values it can take and the data type
 
-			GL.BindBuffer(BufferTarget.ArrayBuffer, VertexColors);
-			GL.BufferData(BufferTarget.ArrayBuffer, VertColors.Length * sizeof(float), VertColors, BufferUsageHint.DynamicCopy);
-			GL.EnableVertexAttribArray(1);
-			GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false, 0, 0);
-
-			GL.DrawArrays(PrimitiveType.Triangles, 0, 3);
+			GL.DrawArrays(PrimitiveType.Triangles, 0, Verts.Length / 3);
+			//GL.DrawArraysIndirect(PrimitiveType.Triangles, Verts); // Might look into later
 
 			// Unbindings
 			GL.BindVertexArray(0);
 			GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
 			GL.DeleteBuffer(Vertices);
-
-			GL.BindVertexArray(1);
-			GL.BindBuffer(BufferTarget.ArrayBuffer, 1);
-			GL.DeleteBuffer(VertexColors);
 
 			GL.DeleteVertexArray(VAO);
 
