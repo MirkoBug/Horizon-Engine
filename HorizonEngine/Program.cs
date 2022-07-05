@@ -14,6 +14,11 @@ namespace HorizonEngine
 	{
 		public static GameWindow Window;
 		public static ShaderProgram Program = new ShaderProgram() { ID = 0 };
+		public static double FrameSecond = 0;
+		public static int Frames = 0;
+
+		public static int VAO;
+		public static int Vertices;
 
 
 
@@ -88,10 +93,10 @@ namespace HorizonEngine
 
 			// Use default settings
 			GameWindowSettings WindowSettings = GameWindowSettings.Default;
-			WindowSettings.IsMultiThreaded = false;
-			WindowSettings.RenderFrequency = 100;
+			WindowSettings.IsMultiThreaded = false;	// I'm honestly not sure about the performance difference it makes, need to study it better
+			WindowSettings.RenderFrequency = 0;
 			WindowSettings.UpdateFrequency = 100;
-
+				
 			NativeWindowSettings NativeSettings = NativeWindowSettings.Default;
 			NativeSettings.APIVersion = Version.Parse("4.1");
 			NativeSettings.Size = new Vector2i(1280, 720);
@@ -101,12 +106,16 @@ namespace HorizonEngine
 			// Create a window with above settings
 			Window = new GameWindow(WindowSettings, NativeSettings);
 
+			// Disable VSync
+			Window.VSync = VSyncMode.Off;
+
 
 			// Bind functions to window events
 			Window.Load	       += OnWindowLoad;
 			Window.UpdateFrame += OnUpdateFrame;
 			Window.RenderFrame += OnRenderFrame;
 			Window.Resize      += OnWindowResize;
+			Window.Unload      += OnWindowUnload;
 
 
 
@@ -135,6 +144,22 @@ namespace HorizonEngine
 			ModelUniform = GL.GetUniformLocation(Program.ID, "ModelMatrix");
 			ProjectionUniform = GL.GetUniformLocation(Program.ID, "ProjectionMatrix");
 			ViewUniform = GL.GetUniformLocation(Program.ID, "ViewMatrix");
+
+
+			// VAO Generation
+			VAO = GL.GenVertexArray();
+			Vertices = GL.GenBuffer();
+			GL.BindVertexArray(VAO);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, Vertices);
+		}
+		
+		private static void OnWindowUnload()
+		{
+			// Unbindings
+			GL.BindVertexArray(0);
+			GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+			GL.DeleteBuffer(Vertices);
+			GL.DeleteVertexArray(VAO);
 		}
 
 		private static void OnWindowResize(ResizeEventArgs Args)
@@ -182,13 +207,8 @@ namespace HorizonEngine
 
 
 
-
-			// Creating and deleting VAOs and stuff every frame is inefficient, needs refactor
-			int VAO = GL.GenVertexArray();
-			int Vertices = GL.GenBuffer();
-
+			// Bind VAO and Vertex buffer and render
 			GL.BindVertexArray(VAO);
-
 			GL.BindBuffer(BufferTarget.ArrayBuffer, Vertices);
 			GL.BufferData(BufferTarget.ArrayBuffer, Verts.Length * sizeof(float), Verts, BufferUsageHint.DynamicDraw);
 			GL.EnableVertexAttribArray(0);																					// Let shaders access this vertex array at layout position 0
@@ -197,16 +217,18 @@ namespace HorizonEngine
 			GL.DrawArrays(PrimitiveType.Triangles, 0, Verts.Length / 3);
 			//GL.DrawArraysIndirect(PrimitiveType.Triangles, Verts); // Might look into later
 
-			// Unbindings
-			GL.BindVertexArray(0);
-			GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-			GL.DeleteBuffer(Vertices);
-
-			GL.DeleteVertexArray(VAO);
-
 
 
 			Window.SwapBuffers();
+
+			FrameSecond += Window.RenderTime;
+			Frames++;
+			if(FrameSecond >= 1.0)
+			{
+				FrameSecond = 0;
+				ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "FPS: " + Frames);
+				Frames = 0;
+			}
 		}
 
 
