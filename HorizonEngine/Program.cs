@@ -16,24 +16,61 @@ namespace HorizonEngine
 		public static ShaderProgram Program = new ShaderProgram() { ID = 0 };
 
 
+
 		// Render settings
 		public static bool UsePerspective = true;
 		public static float FOV = 70f;
 		public static float FarClipPlaneDistance = 10000f;
 		public static float OrthographicScale = 5f;
-		public static Vector3 CameraPosition = new Vector3(0, 0, -1);
+		public static Vector3 CameraPosition = new Vector3(0, 0, 0);
 
 
 
 		// Vertex data (Temporary, for testing)
 		public static float[] Verts =
 		{
-				-0.5f, -0.5f, 0.0f,
-				-0.5f,  0.5f, 0.0f,
-				 0.5f,  0.5f, 0.0f,
-				-0.5f, -0.5f, 0.0f,
-				 0.5f,  0.5f, 0.0f,
-				 0.5f, -0.5f, 0.0f
+				// Front face
+				-0.5f, -0.5f,  0.5f,
+				-0.5f,  0.5f,  0.5f,
+				 0.5f,  0.5f,  0.5f,
+				-0.5f, -0.5f,  0.5f,
+				 0.5f,  0.5f,  0.5f,
+				 0.5f, -0.5f,  0.5f,
+				// Right face
+				 0.5f, -0.5f,  0.5f,
+				 0.5f,  0.5f,  0.5f,
+				 0.5f,  0.5f, -0.5f,
+				 0.5f, -0.5f,  0.5f,
+				 0.5f,  0.5f, -0.5f,
+				 0.5f, -0.5f, -0.5f,
+				// Left face
+				-0.5f, -0.5f,  0.5f,
+				-0.5f,  0.5f,  0.5f,
+				-0.5f,  0.5f, -0.5f,
+				-0.5f, -0.5f,  0.5f,
+				-0.5f,  0.5f, -0.5f,
+				-0.5f, -0.5f, -0.5f,
+				// Back face
+				-0.5f, -0.5f, -0.5f,
+				-0.5f,  0.5f, -0.5f,
+				 0.5f,  0.5f, -0.5f,
+				-0.5f, -0.5f, -0.5f,
+				 0.5f,  0.5f, -0.5f,
+				 0.5f, -0.5f, -0.5f,
+				 // Top face
+				-0.5f,  0.5f, -0.5f,
+				-0.5f,  0.5f,  0.5f,
+				 0.5f,  0.5f,  0.5f,
+				-0.5f,  0.5f, -0.5f,
+				 0.5f,  0.5f,  0.5f,
+				 0.5f,  0.5f, -0.5f,
+				 // Bottom face
+				-0.5f, -0.5f, -0.5f,
+				-0.5f, -0.5f,  0.5f,
+				 0.5f, -0.5f,  0.5f,
+				-0.5f, -0.5f, -0.5f,
+				 0.5f, -0.5f,  0.5f,
+				 0.5f, -0.5f, -0.5f,
 		};
 
 
@@ -69,6 +106,7 @@ namespace HorizonEngine
 			Window.Load	       += OnWindowLoad;
 			Window.UpdateFrame += OnUpdateFrame;
 			Window.RenderFrame += OnRenderFrame;
+			Window.Resize      += OnWindowResize;
 
 
 
@@ -99,6 +137,12 @@ namespace HorizonEngine
 			ViewUniform = GL.GetUniformLocation(Program.ID, "ViewMatrix");
 		}
 
+		private static void OnWindowResize(ResizeEventArgs Args)
+		{
+			// Make sure OpenGL has the current window size after a window resize
+			GL.Viewport(0, 0, Window.Size.X, Window.Size.Y);
+		}
+
 		private static void OnUpdateFrame(FrameEventArgs Args)
 		{
 			
@@ -122,8 +166,12 @@ namespace HorizonEngine
 			
 
 			// View and Model matrix generation
-			Matrix4 ViewMatrix = Matrix4.LookAt(CameraPosition, CameraPosition - Vector3.UnitZ, Vector3.UnitY).Inverted();
-			Matrix4 ModelMatrix = Utility.CreateTransform(new Vector3(0, 0, 0), new Vector3(0, 0, 0), new Vector3(1, 1, 1));
+			Matrix4 ViewMatrix = Matrix4.LookAt(CameraPosition, CameraPosition + Vector3.UnitZ, Vector3.UnitY).Inverted();
+
+
+			// Make a Cube mesh (using the local Verts) and read its transform
+			Mesh Cube = new Mesh(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), Verts);
+			Matrix4 ModelMatrix = Cube.Transform;
 
 			
 
