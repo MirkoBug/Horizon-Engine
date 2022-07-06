@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Collections.Generic;
 using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
@@ -80,6 +81,11 @@ namespace HorizonEngine
 
 
 
+		// Rendering data
+		public static Queue<Mesh> MeshQueue = new Queue<Mesh>();
+
+
+
 		// GLSL Uniforms
 		public static int ModelUniform;
 		public static int ProjectionUniform;
@@ -151,6 +157,20 @@ namespace HorizonEngine
 			Vertices = GL.GenBuffer();
 			GL.BindVertexArray(VAO);
 			GL.BindBuffer(BufferTarget.ArrayBuffer, Vertices);
+
+
+
+			// Testing for Dynamic Mesh Rendering
+			for(int x = -100; x < 100; x+=2)
+			{
+				for (int y = -100; y < 100; y+=2)
+				{
+					MeshQueue.Enqueue(new Mesh(new Vector3(x, y, 30), new Vector3(0, 0, 0), new Vector3(1, 1, 1), Verts));
+				}
+			}
+
+			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Alert, "Meshes Rendering: " + MeshQueue.Count);
+			ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Alert, "Total Vertices: " + MeshQueue.Count * Verts.Length);
 		}
 		
 		private static void OnWindowUnload()
@@ -164,7 +184,7 @@ namespace HorizonEngine
 
 		private static void OnWindowResize(ResizeEventArgs Args)
 		{
-			// Make sure OpenGL has the current window size after a window resize
+			// Make sure OpenGL updates the viewport size after a window resize
 			GL.Viewport(0, 0, Window.Size.X, Window.Size.Y);
 		}
 
@@ -188,20 +208,19 @@ namespace HorizonEngine
 			else
 				ProjectionMatrix = Matrix4.CreateOrthographic(OrthographicScale, OrthographicScale, 0f, FarClipPlaneDistance);
 
-			
+
 
 			// View and Model matrix generation
 			Matrix4 ViewMatrix = Matrix4.LookAt(CameraPosition, CameraPosition + Vector3.UnitZ, Vector3.UnitY).Inverted();
 
 
 			// Make a Cube mesh (using the local Verts) and read its transform
-			Mesh Cube = new Mesh(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), Verts);
-			Matrix4 ModelMatrix = Cube.Transform;
+			//Cube = new Mesh(new Vector3(0, 0, 3), new Vector3(0, 0, 0), new Vector3(1, 1, 1), Verts);
+			//Matrix4 ModelMatrix = Cube.Transform;
 
-			
 
-			// Pass the projection matrix to shaders
-			GL.UniformMatrix4(ModelUniform, false, ref ModelMatrix);
+
+			// Pass the projection and view matrices to shaders
 			GL.UniformMatrix4(ProjectionUniform, false, ref ProjectionMatrix);
 			GL.UniformMatrix4(ViewUniform, false, ref ViewMatrix);
 
@@ -210,23 +229,35 @@ namespace HorizonEngine
 			// Bind VAO and Vertex buffer and render
 			GL.BindVertexArray(VAO);
 			GL.BindBuffer(BufferTarget.ArrayBuffer, Vertices);
-			GL.BufferData(BufferTarget.ArrayBuffer, Verts.Length * sizeof(float), Verts, BufferUsageHint.DynamicDraw);
-			GL.EnableVertexAttribArray(0);																					// Let shaders access this vertex array at layout position 0
+			//GL.BufferData(BufferTarget.ArrayBuffer, Verts.Length * sizeof(float), Verts, BufferUsageHint.DynamicDraw);
+			GL.EnableVertexAttribArray(0);                                                                                  // Let shaders access this vertex array at layout position 0
 			GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false, 0, 0);                                       // Specify the number of values it can take and the data type
 
-			GL.DrawArrays(PrimitiveType.Triangles, 0, Verts.Length / 3);
-			//GL.DrawArraysIndirect(PrimitiveType.Triangles, Verts); // Might look into later
+
+
+			// Render every mesh in the MeshQueue
+			foreach (Mesh _Mesh in MeshQueue)
+			{
+				GL.UniformMatrix4(ModelUniform, false, ref _Mesh.Transform);
+
+				GL.BufferData(BufferTarget.ArrayBuffer, _Mesh.Vertices.Length * sizeof(float), _Mesh.Vertices, BufferUsageHint.DynamicDraw);
+
+				GL.DrawArrays(PrimitiveType.Triangles, 0, _Mesh.Vertices.Length / 3);
+
+				//GL.DrawArraysIndirect(PrimitiveType.Triangles, Verts); // Might look into later
+			}	
 
 
 
 			Window.SwapBuffers();
 
+			// Display average FPS every 5 seconds
 			FrameSecond += Window.RenderTime;
 			Frames++;
-			if(FrameSecond >= 1.0)
+			if(FrameSecond >= 5.0)
 			{
 				FrameSecond = 0;
-				ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "FPS: " + Frames);
+				ConsoleLogger.PrintMessage(ConsoleLogger.MessageType.Info, "FPS: " + Frames / 5);
 				Frames = 0;
 			}
 		}
